@@ -35,8 +35,10 @@ unsigned int MAX_QUALITY = 5;
 float REBUF_PENALTY = 4.3;  // 1 sec rebuffering -> 3 Mbps
 int SMOOTH_PENALTY = 1;
 float INVALID_DOWNLOAD_TIME = -1;
-std::string COOKED_TRACE_FOLDER = "./cooked_traces/";
-std::string OUTPUT_FILE_PATH = "./results/log_sim_dp";
+// std::string COOKED_TRACE_FOLDER = "./roku_traces/";
+// std::string OUTPUT_FILE_PATH = "./roku_traces_results/log_sim_dp";
+std::string COOKED_TRACE_FOLDER = "./cooked_test_traces/";
+std::string OUTPUT_FILE_PATH = "./lixun_eval_test_logs/log_sim_dp";
 std::string VIDEO_SIZE_FILE = "./video_size_";
 
 

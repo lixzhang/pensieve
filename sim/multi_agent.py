@@ -16,7 +16,7 @@ ACTOR_LR_RATE = 0.0001
 CRITIC_LR_RATE = 0.001
 NUM_AGENTS = 16
 TRAIN_SEQ_LEN = 100  # take as a train batch
-MODEL_SAVE_INTERVAL = 100
+MODEL_SAVE_INTERVAL = 100 # 100
 VIDEO_BIT_RATE = [300,750,1200,1850,2850,4300]  # Kbps
 HD_REWARD = [1, 2, 3, 12, 15, 20]
 BUFFER_NORM_FACTOR = 10.0
@@ -28,11 +28,11 @@ DEFAULT_QUALITY = 1  # default video quality without agent
 RANDOM_SEED = 42
 RAND_RANGE = 1000
 SUMMARY_DIR = './results'
-LOG_FILE = './results/log'
+LOG_FILE = SUMMARY_DIR + '/log'
 TEST_LOG_FOLDER = './test_results/'
-TRAIN_TRACES = './cooked_traces/'
-# NN_MODEL = './results/pretrain_linear_reward.ckpt'
-NN_MODEL = None
+TRAIN_TRACES = './cooked_traces/' # './cooked_traces/'  #remember to include / in path, otherwise it gets stuck
+NN_MODEL = './results/nn_model_ep_100000.ckpt' # './results/pretrain_linear_reward.ckpt' # './results/nn_model_ep_83900.ckpt'
+# NN_MODEL = None
 
 
 def testing(epoch, nn_model, log_file):
@@ -98,7 +98,7 @@ def central_agent(net_params_queues, exp_queues):
 
         sess.run(tf.global_variables_initializer())
         writer = tf.summary.FileWriter(SUMMARY_DIR, sess.graph)  # training monitor
-        saver = tf.train.Saver()  # save neural net parameters
+        saver = tf.train.Saver() # keep_checkpoint_every_n_hours=1)  # save neural net parameters
 
         # restore neural net parameters
         nn_model = NN_MODEL
@@ -106,10 +106,13 @@ def central_agent(net_params_queues, exp_queues):
             saver.restore(sess, nn_model)
             print("Model restored.")
 
-        epoch = 0
+        epoch = 100000
+        stop = epoch + 20000
 
         # assemble experiences from agents, compute the gradients
         while True:
+            if epoch > stop:
+                break
             # synchronize the network parameters of work agent
             actor_net_params = actor.get_network_params()
             critic_net_params = critic.get_network_params()

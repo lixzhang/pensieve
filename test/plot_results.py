@@ -1,9 +1,12 @@
 import os
 import numpy as np
+import matplotlib
+matplotlib.use('TkAgg')
+
 import matplotlib.pyplot as plt
 
 
-RESULTS_FOLDER = './results/'
+RESULTS_FOLDER = './lixun_eval_test_logs/' # './lixun_eval_test_logs/' # './roku_traces_results_post_train/'  # './test_results/' # './results/'
 NUM_BINS = 100
 BITS_IN_BYTE = 8.0
 MILLISEC_IN_SEC = 1000.0
@@ -17,7 +20,8 @@ COLOR_MAP = plt.cm.jet #nipy_spectral, Set1,Paired
 SIM_DP = 'sim_dp'
 #SCHEMES = ['BB', 'RB', 'FIXED', 'FESTIVE', 'BOLA', 'RL',  'sim_rl', SIM_DP]
 SCHEMES = ['sim_rl', SIM_DP]
-
+# SCHEMES = ['RL', 'fastMPC']
+SCHEMES = ['sim_bb', 'sim_mpc' , 'sim_rl', 'sim_dp'] # , 'sim_mpc'] # ['sim_rl'] # , 'sim_bb']
 def main():
 	time_all = {}
 	bit_rate_all = {}
@@ -67,7 +71,7 @@ def main():
 						q = int(parse[6])
 						if b == 4:
 							rebuff = (t - last_t) - last_b
-							assert rebuff >= -1e-4
+							# assert rebuff >= -1e-4
 							r -= REBUF_P * rebuff
 
 						r += VIDEO_BIT_RATE[q] / K_IN_M
@@ -96,10 +100,10 @@ def main():
 			bw = bw[::-1]
 		
 		time_ms = np.array(time_ms)
-		time_ms -= time_ms[0]
+		if len(time_ms) > 0:
+			time_ms -= time_ms[0]
 		
 		# print log_file
-
 		for scheme in SCHEMES:
 			if scheme in log_file:
 				time_all[scheme][log_file[len('log_' + str(scheme) + '_'):]] = time_ms
@@ -112,12 +116,12 @@ def main():
 	# ---- ---- ---- ----
 	# Reward records
 	# ---- ---- ---- ----
-		
+
 	log_file_all = []
 	reward_all = {}
 	for scheme in SCHEMES:
 		reward_all[scheme] = []
-
+	# import pdb; pdb.set_trace()
 	for l in time_all[SCHEMES[0]]:
 		schemes_check = True
 		for scheme in SCHEMES:
@@ -181,6 +185,7 @@ def main():
 	# ---- ---- ---- ----
 
 	for l in time_all[SCHEMES[0]]:
+		# import pdb; pdb.set_trace()
 		schemes_check = True
 		for scheme in SCHEMES:
 			if l not in time_all[scheme] or len(time_all[scheme][l]) < VIDEO_LEN:
@@ -221,6 +226,15 @@ def main():
 
 			ax.legend(SCHEMES_REW, loc=9, bbox_to_anchor=(0.5, -0.1), ncol=int(np.ceil(len(SCHEMES) / 2.0)))
 			plt.show()
+			break
+			# plt.draw()
+			# plt.pause(1)
+			# plt.close(fig)
+			# try:
+			# 	plt.show()
+			# except KeyboardInterrupt:
+			# 	plt.close(fig)
+			# 	break
 
 
 if __name__ == '__main__':

@@ -131,6 +131,7 @@ def main():
             # because there is an intrinsic discrepancy in passing single state and batch states
 
             entropy_record.append(a3c.compute_entropy(action_prob[0]))
+            import pdb; pdb.set_trace()
 
             # log time_stamp, bit_rate, buffer_size, reward
             log_file.write(str(time_stamp) + '\t' +

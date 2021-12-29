@@ -22,12 +22,16 @@ SMOOTH_PENALTY = 1
 DEFAULT_QUALITY = 1  # default video quality without agent
 RANDOM_SEED = 42
 RAND_RANGE = 1000000
-SUMMARY_DIR = './results'
-LOG_FILE = './results/log_sim_mpc'
+SUMMARY_DIR = './lixun_eval_test_logs' # './lixun_eval_test_logs' # './roku_traces_results'
+LOG_FILE = SUMMARY_DIR + '/log_sim_mpc'
 # log in format of time_stamp bit_rate buffer_size rebuffer_time chunk_size download_time reward
 # NN_MODEL = './models/nn_model_ep_5900.ckpt'
 
 CHUNK_COMBO_OPTIONS = []
+
+TRACE_FOLDER = './roku_traces/'
+TRACE_FOLDER = './cooked_traces/'
+TRACE_FOLDER = './cooked_test_traces/'
 
 # past errors in bandwidth
 past_errors = []
@@ -55,7 +59,7 @@ def main():
 
     assert len(VIDEO_BIT_RATE) == A_DIM
 
-    all_cooked_time, all_cooked_bw, all_file_names = load_trace.load_trace()
+    all_cooked_time, all_cooked_bw, all_file_names = load_trace.load_trace(TRACE_FOLDER)
 
     net_env = env.Environment(all_cooked_time=all_cooked_time,
                               all_cooked_bw=all_cooked_bw)
@@ -86,7 +90,7 @@ def main():
         # the action is from the last decision
         # this is to make the framework similar to the real
         delay, sleep_time, buffer_size, rebuf, \
-        video_chunk_size, \
+        video_chunk_size, next_video_chunk_sizes, \
         end_of_video, video_chunk_remain = \
             net_env.get_video_chunk(bit_rate)
 

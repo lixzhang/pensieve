@@ -11,7 +11,7 @@ RANDOM_SEED = 42
 DELAY_FACTOR = 3
 VIDEO_CHUNCK_LEN = 4000.0  # (ms), every time add this amount to buffer
 BITRATE_LEVELS = 5
-TOTAL_VIDEO_CHUNCK = 65
+TOTAL_VIDEO_CHUNCK = 49 # 65
 PACKET_PAYLOAD_PORTION = 0.95
 LINK_RTT = 80  # (sec)
 PACKET_SIZE = 1500  # bytes
@@ -68,7 +68,8 @@ def restore_or_compute_download_time(download_time, video_chunk, quan_t_idx, bit
 
 
 def main():
-    all_cooked_time, all_cooked_bw = load_trace.load_trace()
+    all_cooked_time, all_cooked_bw, all_file_names = load_trace.load_trace()
+#     all_cooked_time, all_cooked_bw = load_trace.load_trace()
 
     video_size = {}  # in bytes
     for bitrate in xrange(BITRATE_LEVELS):

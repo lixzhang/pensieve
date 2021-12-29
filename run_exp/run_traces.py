@@ -6,7 +6,7 @@ import numpy as np
 
 RUN_SCRIPT = 'run_video.py'
 RANDOM_SEED = 42
-RUN_TIME = 320  # sec
+RUN_TIME = 30 # 320  # sec
 MM_DELAY = 40   # millisec
 
 
@@ -26,6 +26,12 @@ def main():
 			np.random.shuffle(sleep_vec)
 			sleep_time = sleep_vec[int(process_id)]
 			
+			a = ('mm-delay ' + str(MM_DELAY) + 
+					  ' mm-link 12mbps ' + trace_path + f + ' ' +
+					  '/usr/bin/python ' + RUN_SCRIPT + ' ' + ip + ' ' +
+					  abr_algo + ' ' + str(RUN_TIME) + ' ' +
+					  process_id + ' ' + f + ' ' + str(sleep_time))
+
 			proc = subprocess.Popen('mm-delay ' + str(MM_DELAY) + 
 					  ' mm-link 12mbps ' + trace_path + f + ' ' +
 					  '/usr/bin/python ' + RUN_SCRIPT + ' ' + ip + ' ' +

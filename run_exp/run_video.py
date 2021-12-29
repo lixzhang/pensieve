@@ -51,32 +51,40 @@ try:
 	
 	# start abr algorithm server
 	if abr_algo == 'RL':
-		command = 'exec /usr/bin/python ../rl_server/rl_server_no_training.py ' + trace_file
+		# command = 'exec /usr/bin/python ../rl_server/rl_server_no_training.py ' + trace_file
+		command = 'python ../rl_server/rl_server_no_training.py ' + trace_file
 	elif abr_algo == 'fastMPC':
-		command = 'exec /usr/bin/python ../rl_server/mpc_server.py ' + trace_file
+		# command = 'exec /usr/bin/python ../rl_server/mpc_server.py ' + trace_file
+		command = 'python ../rl_server/mpc_server.py ' + trace_file
 	elif abr_algo == 'robustMPC':
-		command = 'exec /usr/bin/python ../rl_server/robust_mpc_server.py ' + trace_file
+		# command = 'exec /usr/bin/python ../rl_server/robust_mpc_server.py ' + trace_file
+		command = 'python ../rl_server/robust_mpc_server.py ' + trace_file
 	else:
-		command = 'exec /usr/bin/python ../rl_server/simple_server.py ' + abr_algo + ' ' + trace_file
+		# command = 'exec /usr/bin/python ../rl_server/simple_server.py ' + abr_algo + ' ' + trace_file
+		command = 'python ../rl_server/simple_server.py ' + abr_algo + ' ' + trace_file
 	
 	proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 	sleep(2)
 	
 	# to not display the page in browser
-	display = Display(visible=0, size=(800,600))
-	display.start()
+	display = Display(visible=1, size=(1920,1080)) # size=(800, 600)
+	# display.start()
 	
 	# initialize chrome driver
 	options=Options()
-	chrome_driver = '../abr_browser_dir/chromedriver'
+	chrome_driver = '/home/lixun/Desktop/pensieve/abr_browser_dir/chromedriver' # '/home/lixun/Desktop/selenium_firefox/chromedriver' # '/home/lixun/Desktop/pensieve/abr_browser_dir/chromedriver'
 	options.add_argument('--user-data-dir=' + chrome_user_dir)
 	options.add_argument('--ignore-certificate-errors')
+	options.add_argument('--autoplay-policy=no-user-gesture-required')
 	driver=webdriver.Chrome(chrome_driver, chrome_options=options)
-	
+
+	driver.set_window_size(1920, 1080) # this only works after commenting out the lines for 'display'
+	print driver.get_window_size()
+
 	# run chrome
 	driver.set_page_load_timeout(10)
 	driver.get(url)
-	
+
 	sleep(run_time)
 	
 	driver.quit()
