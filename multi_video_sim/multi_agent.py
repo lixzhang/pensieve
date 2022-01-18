@@ -30,7 +30,7 @@ SUMMARY_DIR = './results'
 LOG_FILE = './results/log'
 TEST_LOG_FOLDER = './test_results/'
 TRAIN_TRACES = './cooked_traces/'
-NN_MODEL = './models/nn_model_ep_13600.ckpt'
+NN_MODEL = './models/nn_model_ep_99900.ckpt'
 # NN_MODEL = None
 
 
@@ -123,7 +123,7 @@ def central_agent(net_params_queues, exp_queues):
 
         sess.run(tf.global_variables_initializer())
         writer = tf.summary.FileWriter(SUMMARY_DIR, sess.graph)  # training monitor
-        saver = tf.train.Saver(max_to_keep=10000)  # save neural net parameters
+        saver = tf.train.Saver(max_to_keep=5)  # save neural net parameters
 
         # restore neural net parameters
         nn_model = NN_MODEL
@@ -131,10 +131,13 @@ def central_agent(net_params_queues, exp_queues):
             saver.restore(sess, nn_model)
             print("Model restored.")
 
-        epoch = 0
+        epoch = 100000
+        stop = epoch + 20000
 
         # while True:  # assemble experiences from agents, compute the gradients
         while True:
+            if epoch > stop:
+                break            
             # synchronize the network parameters of work agent
             actor_net_params = actor.get_network_params()
             critic_net_params = critic.get_network_params()

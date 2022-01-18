@@ -108,3 +108,12 @@ traces/belgium/logs/
 traces/belgium/mahimahi/
 video_bigbuckbunny/
 video_server/video1 (copy 1)/
+*.pyc
+test/lixun_results-all
+sim/traces_all/
+.ipynb_checkpoints/
+sim/bk/
+multi_video_sim/test_monitor/
+multi_video_sim/test_results/
+multi_video_sim/test_video/
+multi_video_sim/videos/

@@ -15,13 +15,12 @@ RANDOM_SEED = 42
 RAND_RANGE = 1000000
 RESEVOIR = 5  # BB
 CUSHION = 10  # BB
-SUMMARY_DIR = './lixun_eval_train_logs' # './lixun_eval_test_logs'# './roku_traces_results' # './results'
+SUMMARY_DIR = './lixun_eval_test_logs' # './lixun_eval_test_logs'# './roku_traces_results' # './results'
 LOG_FILE = SUMMARY_DIR + '/log_sim_bb'
 # log in format of time_stamp bit_rate buffer_size rebuffer_time chunk_size download_time reward
 
-TRACE_FOLDER = './roku_traces/'
-TRACE_FOLDER = './cooked_traces/'
-# TRACE_FOLDER = './cooked_test_traces/'
+# TRACE_FOLDER = './cooked_traces/'
+TRACE_FOLDER = './cooked_test_traces/'
 
 def main():
 
@@ -33,7 +32,6 @@ def main():
 
     net_env = env.Environment(all_cooked_time=all_cooked_time,
                               all_cooked_bw=all_cooked_bw)
-
     log_path = LOG_FILE + '_' + all_file_names[net_env.trace_idx]
     log_file = open(log_path, 'wb')
     epoch = 0
@@ -92,7 +90,6 @@ def main():
             last_bit_rate = DEFAULT_QUALITY
             bit_rate = DEFAULT_QUALITY  # use the default action here
             r_batch = []
-
             print "video count", video_count
             video_count += 1
 

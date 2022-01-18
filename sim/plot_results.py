@@ -4,9 +4,9 @@ import matplotlib
 matplotlib.use('TkAgg')
 
 import matplotlib.pyplot as plt
+import sys
 
-
-RESULTS_FOLDER = './lixun_eval_test_logs/' # './lixun_eval_test_logs/' # './roku_traces_results_post_train/'  # './test_results/' # './results/'
+RESULTS_FOLDER = './test_results/' # './lixun_eval_test_logs/' # './roku_traces_results_post_train/'  # './test_results/' # './results/'
 NUM_BINS = 100
 BITS_IN_BYTE = 8.0
 MILLISEC_IN_SEC = 1000.0
@@ -21,7 +21,7 @@ SIM_DP = 'sim_dp'
 #SCHEMES = ['BB', 'RB', 'FIXED', 'FESTIVE', 'BOLA', 'RL',  'sim_rl', SIM_DP]
 SCHEMES = ['sim_rl', SIM_DP]
 # SCHEMES = ['RL', 'fastMPC']
-SCHEMES = ['sim_bb', 'sim_rl'] # ['sim_rl'] # , 'sim_bb']
+SCHEMES = ['sim_rl'] # , 'sim_mpc'] # ['sim_rl'] # , 'sim_bb']
 def main():
 	time_all = {}
 	bit_rate_all = {}
@@ -155,7 +155,10 @@ def main():
 	
 	plt.ylabel('total reward')
 	plt.xlabel('trace index')
-	plt.show()
+	number = sys.argv[1]
+	plt.savefig("./reward_plots/" + "reward_" + number + ".png")
+	# plt.show()
+
 
 	# ---- ---- ---- ----
 	# CDF 
@@ -177,7 +180,8 @@ def main():
 	
 	plt.ylabel('CDF')
 	plt.xlabel('total reward')
-	plt.show()
+	plt.savefig("./reward_plots/" + "cdf_" + number + ".png")
+	# plt.show()
 
 
 	# ---- ---- ---- ----
@@ -225,7 +229,8 @@ def main():
 				SCHEMES_REW.append(scheme + ': ' + str(np.sum(raw_reward_all[scheme][l][1:VIDEO_LEN])))
 
 			ax.legend(SCHEMES_REW, loc=9, bbox_to_anchor=(0.5, -0.1), ncol=int(np.ceil(len(SCHEMES) / 2.0)))
-			plt.show()
+			plt.savefig("./reward_plots/" + "example_" + number + ".png")
+			# plt.show()
 			break
 			# plt.draw()
 			# plt.pause(1)

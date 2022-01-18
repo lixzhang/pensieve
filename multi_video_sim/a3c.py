@@ -51,11 +51,11 @@ class ActorNetwork(object):
         self.act_grad_weights = tf.placeholder(tf.float32, [None, 1])
 
         # Compute the objective (log action_vector and entropy)
-        self.obj = tf.reduce_sum(tf.mul(
-                       tf.log(tf.reduce_sum(tf.mul(self.out, self.acts),
+        self.obj = tf.reduce_sum(tf.multiply(
+                       tf.log(tf.reduce_sum(tf.multiply(self.out, self.acts),
                                             reduction_indices=1, keep_dims=True)),
                        -self.act_grad_weights)) \
-                   + ENTROPY_WEIGHT * tf.reduce_sum(tf.mul(self.out,
+                   + ENTROPY_WEIGHT * tf.reduce_sum(tf.multiply(self.out,
                                                            tf.log(self.out + ENTROPY_EPS)))
 
         # Combine the gradients here
@@ -178,7 +178,7 @@ class CriticNetwork(object):
         self.td_target = tf.placeholder(tf.float32, [None, 1])
 
         # Temporal Difference, will also be weights for actor_gradients
-        self.td = tf.sub(self.td_target, self.out)
+        self.td = tf.subtract(self.td_target, self.out)
 
         # Mean square error
         self.loss = tflearn.mean_square(self.td_target, self.out)
@@ -310,13 +310,13 @@ def compute_entropy(x):
 
 def build_summaries():
     td_loss = tf.Variable(0.)
-    tf.scalar_summary("TD_loss", td_loss)
+    tf.summary.scalar("TD_loss", td_loss)
     eps_total_reward = tf.Variable(0.)
-    tf.scalar_summary("Eps_total_reward", eps_total_reward)
+    tf.summary.scalar("Eps_total_reward", eps_total_reward)
     avg_entropy = tf.Variable(0.)
-    tf.scalar_summary("Avg_entropy", avg_entropy)
+    tf.summary.scalar("Avg_entropy", avg_entropy)
 
     summary_vars = [td_loss, eps_total_reward, avg_entropy]
-    summary_ops = tf.merge_all_summaries()
+    summary_ops = tf.summary.merge_all()
 
     return summary_ops, summary_vars

@@ -22,12 +22,11 @@ SMOOTH_PENALTY = 1
 DEFAULT_QUALITY = 1  # default video quality without agent
 RANDOM_SEED = 42
 RAND_RANGE = 1000
-SUMMARY_DIR = './lixun_eval_train_logs/rl_results/lixun_from_scratch_2_epoch_20k/' # './lixun_eval_train_logs' # './lixun_eval_test_logs' # './roku_traces_results/' # './lixun_train_results' # './results'
-LOG_FILE = SUMMARY_DIR + 'log_sim_rl' # './results/log_sim_rl'
+SUMMARY_DIR = './lixun_eval_train_logs' # './lixun_eval_train_logs/' # './lixun_eval_test_logs' # './roku_traces_results/' # './lixun_train_results' # './results'
+LOG_FILE = SUMMARY_DIR + '/log_sim_rl' # './results/log_sim_rl'
 # log in format of time_stamp bit_rate buffer_size rebuffer_time chunk_size download_time reward
-NN_MODEL = '../sim/results/from_scratch_2/nn_model_ep_20000.ckpt' # './models/pretrain_linear_reward.ckpt' # './lixun_train_models/nn_model_ep_112900.ckpt' #  './models/pretrain_linear_reward.ckpt' # './lixun_train_models/nn_model_ep_112900.ckpt' # './models/pretrain_linear_reward.ckpt' # './lixun_train_models/nn_model_ep_119100.ckpt' # 
+NN_MODEL = './lixun_train_models/nn_model_ep_80000.ckpt' # './models/pretrain_linear_reward.ckpt' # './models/pretrain_linear_reward.ckpt' # './lixun_train_models/nn_model_ep_112900.ckpt' #  './models/pretrain_linear_reward.ckpt' # './lixun_train_models/nn_model_ep_112900.ckpt' # './models/pretrain_linear_reward.ckpt' # './lixun_train_models/nn_model_ep_119100.ckpt' # 
 
-TRACE_FOLDER = './roku_traces/'
 TRACE_FOLDER = './cooked_traces/'
 # TRACE_FOLDER = './cooked_test_traces/'
 

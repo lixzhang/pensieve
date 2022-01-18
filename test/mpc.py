@@ -29,8 +29,7 @@ LOG_FILE = SUMMARY_DIR + '/log_sim_mpc'
 
 CHUNK_COMBO_OPTIONS = []
 
-TRACE_FOLDER = './roku_traces/'
-TRACE_FOLDER = './cooked_traces/'
+# TRACE_FOLDER = './cooked_traces/'
 TRACE_FOLDER = './cooked_test_traces/'
 
 # past errors in bandwidth
