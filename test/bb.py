@@ -6,7 +6,8 @@ import load_trace
 S_INFO = 6  # bit_rate, buffer_size, next_chunk_size, bandwidth_measurement(throughput and time), chunk_til_video_end
 S_LEN = 8  # take how many frames in the past
 A_DIM = 6
-VIDEO_BIT_RATE = [300,750,1200,1850,2850,4300]  # Kbps
+# VIDEO_BIT_RATE = [300,750,1200,1850,2850,4300]  # Kbps
+VIDEO_BIT_RATE = [750,2500,4500,6000,8000,20000]  # Kbps
 M_IN_K = 1000.0
 REBUF_PENALTY = 4.3  # 1 sec rebuffering -> 3 Mbps
 SMOOTH_PENALTY = 1
@@ -63,7 +64,6 @@ def main():
         r_batch.append(reward)
 
         last_bit_rate = bit_rate
-
         # log time_stamp, bit_rate, buffer_size, reward
         log_file.write(str(time_stamp / M_IN_K) + '\t' +
                        str(VIDEO_BIT_RATE[bit_rate]) + '\t' +
@@ -92,7 +92,6 @@ def main():
             r_batch = []
             print "video count", video_count
             video_count += 1
-
             if video_count > len(all_file_names):
                 break
 

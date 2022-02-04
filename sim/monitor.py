@@ -9,7 +9,7 @@ import sys
 
 class OnMyWatch:
     # Set the directory on watch
-    watchDirectory = "/home/lixun/Desktop/pensieve/sim/"
+    watchDirectory = "/home/ec2-user/SageMaker/pensieve/sim/"
   
     def __init__(self):
         self.observer = Observer()

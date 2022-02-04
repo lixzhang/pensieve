@@ -12,7 +12,7 @@ BITS_IN_BYTE = 8.0
 MILLISEC_IN_SEC = 1000.0
 M_IN_B = 1000000.0
 VIDEO_LEN = 48
-VIDEO_BIT_RATE = [300, 750, 1200, 1850, 2850, 4300]
+# VIDEO_BIT_RATE = [300, 750, 1200, 1850, 2850, 4300]
 K_IN_M = 1000.0
 REBUF_P = 4.3
 SMOOTH_P = 1
@@ -21,7 +21,8 @@ SIM_DP = 'sim_dp'
 #SCHEMES = ['BB', 'RB', 'FIXED', 'FESTIVE', 'BOLA', 'RL',  'sim_rl', SIM_DP]
 SCHEMES = ['sim_rl', SIM_DP]
 # SCHEMES = ['RL', 'fastMPC']
-SCHEMES = ['sim_bb', 'sim_rl'] # ['sim_rl'] # , 'sim_bb']
+SCHEMES = ['sim_bb', 'sim_mpc', 'sim_rl'] # 'sim_rl', 'sim_bb','sim_mpc', 
+
 def main():
 	time_all = {}
 	bit_rate_all = {}
@@ -106,6 +107,7 @@ def main():
 		# print log_file
 		for scheme in SCHEMES:
 			if scheme in log_file:
+				# import pdb; pdb.set_trace()
 				time_all[scheme][log_file[len('log_' + str(scheme) + '_'):]] = time_ms
 				bit_rate_all[scheme][log_file[len('log_' + str(scheme) + '_'):]] = bit_rate
 				buff_all[scheme][log_file[len('log_' + str(scheme) + '_'):]] = buff
@@ -132,6 +134,8 @@ def main():
 			log_file_all.append(l)
 			for scheme in SCHEMES:
 				reward_all[scheme].append(np.sum(raw_reward_all[scheme][l][1:VIDEO_LEN]))
+				if reward_all[scheme][-1] < -2000:
+					print('trace that led to low reward: ' + l)
 
 	mean_rewards = {}
 	for scheme in SCHEMES:

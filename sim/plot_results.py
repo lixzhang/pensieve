@@ -1,7 +1,8 @@
 import os
 import numpy as np
 import matplotlib
-matplotlib.use('TkAgg')
+# matplotlib.use('TkAgg')
+matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
 import sys
@@ -156,7 +157,8 @@ def main():
 	plt.ylabel('total reward')
 	plt.xlabel('trace index')
 	number = sys.argv[1]
-	plt.savefig("./reward_plots/" + "reward_" + number + ".png")
+	plots_folder = "./results/reward_plots/"
+	plt.savefig(plots_folder + "reward_" + number + ".png")
 	# plt.show()
 
 
@@ -180,7 +182,7 @@ def main():
 	
 	plt.ylabel('CDF')
 	plt.xlabel('total reward')
-	plt.savefig("./reward_plots/" + "cdf_" + number + ".png")
+	plt.savefig(plots_folder + "cdf_" + number + ".png")
 	# plt.show()
 
 
@@ -229,7 +231,7 @@ def main():
 				SCHEMES_REW.append(scheme + ': ' + str(np.sum(raw_reward_all[scheme][l][1:VIDEO_LEN])))
 
 			ax.legend(SCHEMES_REW, loc=9, bbox_to_anchor=(0.5, -0.1), ncol=int(np.ceil(len(SCHEMES) / 2.0)))
-			plt.savefig("./reward_plots/" + "example_" + number + ".png")
+			plt.savefig(plots_folder + "example_" + number + ".png")
 			# plt.show()
 			break
 			# plt.draw()

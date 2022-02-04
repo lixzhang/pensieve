@@ -118,3 +118,5 @@ multi_video_sim/test_results/
 multi_video_sim/test_video/
 multi_video_sim/videos/
 *.mp4
+sim/video_size/
+demo/data/
