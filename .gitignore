@@ -117,3 +117,4 @@ multi_video_sim/test_monitor/
 multi_video_sim/test_results/
 multi_video_sim/test_video/
 multi_video_sim/videos/
+*.mp4
