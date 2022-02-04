@@ -21,7 +21,7 @@ SIM_DP = 'sim_dp'
 #SCHEMES = ['BB', 'RB', 'FIXED', 'FESTIVE', 'BOLA', 'RL',  'sim_rl', SIM_DP]
 SCHEMES = ['sim_rl', SIM_DP]
 # SCHEMES = ['RL', 'fastMPC']
-SCHEMES = ['sim_bb', 'sim_mpc', 'sim_rl'] # 'sim_rl', 'sim_bb','sim_mpc', 
+SCHEMES = ['sim_bb', 'sim_rl'] # 'sim_rl', 'sim_bb','sim_mpc', 
 
 def main():
 	time_all = {}
@@ -29,10 +29,12 @@ def main():
 	buff_all = {}
 	bw_all = {}
 	raw_reward_all = {}
+	raw_rebuff_all = {}
 
 	for scheme in SCHEMES:
 		time_all[scheme] = {}
 		raw_reward_all[scheme] = {}
+		raw_rebuff_all[scheme] = {}		
 		bit_rate_all[scheme] = {}
 		buff_all[scheme] = {}
 		bw_all[scheme] = {}
@@ -45,6 +47,7 @@ def main():
 		buff = []
 		bw = []
 		reward = []
+		rebuff = []
 
 		print log_file
 
@@ -93,6 +96,7 @@ def main():
 					buff.append(float(parse[2]))
 					bw.append(float(parse[4]) / float(parse[5]) * BITS_IN_BYTE * MILLISEC_IN_SEC / M_IN_B)
 					reward.append(float(parse[6]))
+					rebuff.append(float(parse[3]))			
 
 		if SIM_DP in log_file:
 			time_ms = time_ms[::-1]
@@ -113,6 +117,7 @@ def main():
 				buff_all[scheme][log_file[len('log_' + str(scheme) + '_'):]] = buff
 				bw_all[scheme][log_file[len('log_' + str(scheme) + '_'):]] = bw
 				raw_reward_all[scheme][log_file[len('log_' + str(scheme) + '_'):]] = reward
+				raw_rebuff_all[scheme][log_file[len('log_' + str(scheme) + '_'):]] = rebuff				
 				break
 
 	# ---- ---- ---- ----
@@ -121,8 +126,10 @@ def main():
 
 	log_file_all = []
 	reward_all = {}
+	rebuff_all = {}
 	for scheme in SCHEMES:
 		reward_all[scheme] = []
+		rebuff_all[scheme] = []
 	# import pdb; pdb.set_trace()
 	for l in time_all[SCHEMES[0]]:
 		schemes_check = True
@@ -135,30 +142,82 @@ def main():
 			for scheme in SCHEMES:
 				reward_all[scheme].append(np.sum(raw_reward_all[scheme][l][1:VIDEO_LEN]))
 				if reward_all[scheme][-1] < -2000:
-					print('trace that led to low reward: ' + l)
+					print('trace that led to low reward: ' + l + "; reward: " + str(reward_all[scheme][-1]) + "; scheme:" + scheme)
+				rebuff_all[scheme].append(np.sum(raw_rebuff_all[scheme][l][1:VIDEO_LEN]))
 
 	mean_rewards = {}
+	mean_rebuffs = {}
 	for scheme in SCHEMES:
 		mean_rewards[scheme] = np.mean(reward_all[scheme])
+		mean_rebuffs[scheme] = np.mean(rebuff_all[scheme])
 
 	fig = plt.figure()
-	ax = fig.add_subplot(111)
+	ax1 = fig.add_subplot(211)
+	ax2 = fig.add_subplot(212)
+	# assuming two schemes: bb and rl
+	data_for_comp = [reward_all[scheme] for scheme in SCHEMES] + [time_all[SCHEMES[0]]]
+	values = []
+	for bb, rl, lf in zip(*data_for_comp):
+		values.append([bb, rl, rl-bb, lf])
+	values.sort(key=lambda x:x[2], reverse=True)
+	print("-"*30)
+	print("Top difference in reward")	
+	for v in values[:30]:
+		print(v)
+	print("-"*30)
+	print("BB performing better")
+	for v in values:
+		if v[2] < 0:
+			print(v)
+
+	data_for_comp = [rebuff_all[scheme] for scheme in SCHEMES] + [time_all[SCHEMES[0]]]
+	values = []
+	for bb, rl, lf in zip(*data_for_comp):
+		values.append([bb, rl, bb-rl, lf])
+	values.sort(key=lambda x:x[2], reverse=True)
+	print("-"*30)
+	print("Top difference in rebuffer time")
+	for v in values[:30]:
+		print(v)
+	print("-"*30)
+	print("BB performing better")
+	cnt = 0
+	for v in values:
+		if v[2] < 0:
+			print(v)
+			cnt += 1
+	print("Total BB performing better: " + str(cnt))
 
 	for scheme in SCHEMES:
-		ax.plot(reward_all[scheme])
+		ax1.plot(reward_all[scheme])
 	
+	for scheme in SCHEMES:
+		ax2.plot(rebuff_all[scheme])
+
 	SCHEMES_REW = []
+	SCHEMES_REB = []
 	for scheme in SCHEMES:
 		SCHEMES_REW.append(scheme + ': ' + str(mean_rewards[scheme]))
+		SCHEMES_REB.append(scheme + ': ' + str(mean_rebuffs[scheme]))
 
-	colors = [COLOR_MAP(i) for i in np.linspace(0, 1, len(ax.lines))]
-	for i,j in enumerate(ax.lines):
+	colors = [COLOR_MAP(i) for i in np.linspace(0, 1, len(ax1.lines))]
+	for i,j in enumerate(ax1.lines):
+		j.set_color(colors[i])
+	colors = [COLOR_MAP(i) for i in np.linspace(0, 1, len(ax2.lines))]
+	for i,j in enumerate(ax2.lines):
 		j.set_color(colors[i])
 
-	ax.legend(SCHEMES_REW, loc=4)
+	ax1.legend(SCHEMES_REW, loc=4)
+	ax2.legend(SCHEMES_REB, loc=4)
 	
-	plt.ylabel('total reward')
-	plt.xlabel('trace index')
+	ax1.set_ylabel('total reward')
+	ax1.set_xlabel('trace index')
+
+	ax2.set_ylabel('total rebuffer time')
+	ax2.set_xlabel('trace index')
+
+	# plt.ylabel('total reward')
+	# plt.xlabel('trace index')
 	plt.show()
 
 	# ---- ---- ---- ----
@@ -187,7 +246,7 @@ def main():
 	# ---- ---- ---- ----
 	# check each trace
 	# ---- ---- ---- ----
-
+	n_examples = 3
 	for l in time_all[SCHEMES[0]]:
 		# import pdb; pdb.set_trace()
 		schemes_check = True
@@ -230,7 +289,9 @@ def main():
 
 			ax.legend(SCHEMES_REW, loc=9, bbox_to_anchor=(0.5, -0.1), ncol=int(np.ceil(len(SCHEMES) / 2.0)))
 			plt.show()
-			break
+			n_examples -= 1
+			if n_examples == 0:
+				break
 			# plt.draw()
 			# plt.pause(1)
 			# plt.close(fig)
