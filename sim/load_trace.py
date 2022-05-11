@@ -9,6 +9,7 @@ def load_trace(cooked_trace_folder=COOKED_TRACE_FOLDER):
     all_cooked_time = []
     all_cooked_bw = []
     all_file_names = []
+#     i = 0
     for cooked_file in cooked_files:
         file_path = cooked_trace_folder + cooked_file
         cooked_time = []
@@ -22,5 +23,9 @@ def load_trace(cooked_trace_folder=COOKED_TRACE_FOLDER):
         all_cooked_time.append(cooked_time)
         all_cooked_bw.append(cooked_bw)
         all_file_names.append(cooked_file)
+#         if i == 2459:
+#             print("-"*200)
+#             print(str(i) + ":" + cooked_file)
+#         i += 1
 
     return all_cooked_time, all_cooked_bw, all_file_names

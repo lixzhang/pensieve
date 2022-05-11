@@ -11,7 +11,7 @@ from matplotlib import gridspec
 
 VIDEO_FILE = 'bunny.mp4' # 'la_luna.mp4'
 data_dir = "./data/"
-session = "PL01-4207998440a92c1c.log" # "PL01-4207998440a92c1c.log", "PL01-7f8a5a0ab378d455.log", "PL01-9c16d837e409887d.log", "PL01-7cb0405aa4b25f4d.log"
+session = "PL01-138cfd959876bdf2.log" # "PL01-c7180378e51b58de.log" # "PL01-5c6457b4e2c68d39.log" # "PL01-138cfd959876bdf2.log" # "PL01-4207998440a92c1c.log" # "PL01-4207998440a92c1c.log", "PL01-7f8a5a0ab378d455.log", "PL01-9c16d837e409887d.log", "PL01-7cb0405aa4b25f4d.log"
 RL_BITRATE_FILE = data_dir + session + "_rl_bitrate"
 RL_BUFFER_FILE = data_dir + session + '_rl_buffer'
 MPC_BITRATE_FILE = data_dir + session + '_bb_bitrate'

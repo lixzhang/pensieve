@@ -231,12 +231,12 @@ def compute_gradients(s_batch, a_batch, r_batch, terminal, actor, critic):
 
     if terminal:
         R_batch[-1, 0] = 0  # terminal state
-        # for t in reversed(xrange(ba_size - 1)):
-        #     R_batch[t, 0] = r_batch[t] + GAMMA * R_batch[t + 1, 0]        
+#         for t in reversed(xrange(ba_size - 1)):
+#             R_batch[t, 0] = r_batch[t] + GAMMA * R_batch[t + 1, 0]        
     else:
         R_batch[-1, 0] = v_batch[-1, 0]  # boot strap from last state
-        # for t in reversed(xrange(ba_size - 1)):
-        #     R_batch[t, 0] = r_batch[t] + GAMMA * v_batch[t + 1, 0]
+#         for t in reversed(xrange(ba_size - 1)):
+#             R_batch[t, 0] = r_batch[t] + GAMMA * v_batch[t + 1, 0]
 
     for t in reversed(xrange(ba_size - 1)):
         R_batch[t, 0] = r_batch[t] + GAMMA * R_batch[t + 1, 0]

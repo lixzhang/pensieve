@@ -13,9 +13,10 @@ S_LEN = 10  # take how many frames in the past
 A_DIM = 10
 ACTOR_LR_RATE = 0.0001
 CRITIC_LR_RATE = 0.0001
-NUM_AGENTS = 16
+NUM_AGENTS = 96 # 16
 TRAIN_SEQ_LEN = 200  # take as a train batch
 MODEL_SAVE_INTERVAL = 100
+MODEL_EVAL_INTERVAL = MODEL_SAVE_INTERVAL * 10
 VIDEO_BIT_RATE = [200,300,450,750,1200,1850,2850,4300,6000,8000]  # Kbps
 BUFFER_NORM_FACTOR = 10.0
 M_IN_K = 1000.0
@@ -30,7 +31,7 @@ SUMMARY_DIR = './results'
 LOG_FILE = './results/log'
 TEST_LOG_FOLDER = './test_results/'
 TRAIN_TRACES = './cooked_traces/'
-NN_MODEL = './models/nn_model_ep_99900.ckpt'
+NN_MODEL = './models/nn_model_ep_99600.ckpt'
 # NN_MODEL = None
 
 
@@ -60,13 +61,14 @@ def bitrate_to_action(bitrate, mask, a_dim=A_DIM):
     return action
 
 
-def testing(epoch, nn_model, log_file):
+def testing(epoch, nn_model, log_file, script):
     # clean up the test results folder
     os.system('rm -r ' + TEST_LOG_FOLDER)
     os.system('mkdir ' + TEST_LOG_FOLDER)
     
     # run test script
-    os.system('python rl_test.py ' + nn_model)
+    # os.system('python rl_test.py ' + nn_model)
+    os.system('python ' + script + ' ' + nn_model)
     
     # append test performance to the log
     rewards = []
@@ -110,7 +112,8 @@ def central_agent(net_params_queues, exp_queues):
                         filemode='w',
                         level=logging.INFO)
 
-    with tf.Session() as sess, open(LOG_FILE + '_test', 'wb') as test_log_file:
+    with tf.Session() as sess, open(LOG_FILE + '_test', 'wb') as test_log_file, \
+        open(LOG_FILE + '_test_on_training_traces', 'wb') as test_log_file_on_traing_traces:
 
         actor = a3c.ActorNetwork(sess,
                                  state_dim=[S_INFO, S_LEN], action_dim=A_DIM,
@@ -123,7 +126,7 @@ def central_agent(net_params_queues, exp_queues):
 
         sess.run(tf.global_variables_initializer())
         writer = tf.summary.FileWriter(SUMMARY_DIR, sess.graph)  # training monitor
-        saver = tf.train.Saver(max_to_keep=5)  # save neural net parameters
+        saver = tf.train.Saver(max_to_keep=20)  # save neural net parameters
 
         # restore neural net parameters
         nn_model = NN_MODEL
@@ -131,7 +134,7 @@ def central_agent(net_params_queues, exp_queues):
             saver.restore(sess, nn_model)
             print("Model restored.")
 
-        epoch = 100000
+        epoch = 100000 # 100000
         stop = epoch + 20000
 
         # while True:  # assemble experiences from agents, compute the gradients
@@ -220,8 +223,11 @@ def central_agent(net_params_queues, exp_queues):
                 logging.info("Model saved in file: " + save_path)
                 testing(epoch, 
                     MODEL_DIR + "nn_model_ep_" + str(epoch) + ".ckpt", 
-                    test_log_file)
-
+                    test_log_file, 'rl_test.py')
+            if epoch % MODEL_EVAL_INTERVAL == 0:
+                testing(epoch, 
+                    MODEL_DIR + "nn_model_ep_" + str(epoch) + ".ckpt", 
+                    test_log_file_on_traing_traces, 'rl_test_on_training_traces.py')
 
 def agent(agent_id, net_params_queue, exp_queue):
 

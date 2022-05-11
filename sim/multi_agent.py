@@ -14,8 +14,8 @@ S_LEN = 8  # take how many frames in the past
 A_DIM = 6
 ACTOR_LR_RATE = 0.0001
 CRITIC_LR_RATE = 0.001
-NUM_AGENTS = 64
-TRAIN_SEQ_LEN = 100  # take as a train batch
+NUM_AGENTS = 96 # 96
+TRAIN_SEQ_LEN = 100  # 100 take as a train batch
 MODEL_SAVE_INTERVAL = 100 # 100
 # VIDEO_BIT_RATE = [300,750,1200,1850,2850,4300]  # Kbps
 VIDEO_BIT_RATE = [750,2500,4500,6000,8000,20000]  # Kbps
@@ -32,7 +32,7 @@ SUMMARY_DIR = './results'
 LOG_FILE = SUMMARY_DIR + '/log'
 TEST_LOG_FOLDER = './test_results/'
 TRAIN_TRACES = './cooked_traces/' # './cooked_traces/'  #remember to include / in path, otherwise it gets stuck
-NN_MODEL = './results/nn_model_ep_25000.ckpt' # './results/pretrain_linear_reward.ckpt' # './results/nn_model_ep_83900.ckpt'
+NN_MODEL = './results/nn_model_ep_50000.ckpt' # './results/pretrain_linear_reward.ckpt' # './results/nn_model_ep_83900.ckpt'
 # NN_MODEL = None
 
 
@@ -107,8 +107,8 @@ def central_agent(net_params_queues, exp_queues):
             saver.restore(sess, nn_model)
             print("Model restored.")
 
-        epoch = 25000
-        stop = epoch + 5000
+        epoch = 50000 # name of starting epoch
+        stop = epoch + 10000 # ending epoch
 
         # assemble experiences from agents, compute the gradients
         while True:

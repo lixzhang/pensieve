@@ -7,7 +7,7 @@ MAX_NUM_BITRATES = 10
 VIDEO_CHUNCK_LEN = 4000.0  # millisec
 DRAIN_BUFFER_SLEEP_TIME = 500.0  # millisec
 MILLISECONDS_IN_SECOND = 1000.0
-BUFFER_THRESH = 60.0 * MILLISECONDS_IN_SECOND
+BUFFER_THRESH = 100.0 * MILLISECONDS_IN_SECOND
 B_IN_MB = 1000000.0
 BITS_IN_BYTE = 8.0
 PACKET_PAYLOAD_PORTION = 0.95
@@ -93,7 +93,7 @@ class Environment:
 						assert np.sum(video_mask) == video_num_bitrates
 
 					else:
-						video_size = [float(i) for i in parse]
+						video_size = [float(i)*B_IN_MB for i in parse]
 						assert len(video_size) == video_num_bitrates
 						video_sizes.append(video_size)
 				assert len(video_sizes) == video_num_chunks
@@ -125,7 +125,7 @@ class Environment:
 		assert quality >= 0
 		assert quality < self.video_num_bitrates[self.video_idx]
 
-		video_chunk_size = self.video_sizes[self.video_idx][self.chunk_idx][quality] * B_IN_MB  # in bytes
+		video_chunk_size = self.video_sizes[self.video_idx][self.chunk_idx][quality] # * B_IN_MB  # in bytes
 		
 		# use the delivery opportunity in mahimahi
 		delay = 0.0  # in ms

@@ -146,7 +146,11 @@ class Environment:
             self.trace_idx = np.random.randint(len(self.all_cooked_time))
             self.cooked_time = self.all_cooked_time[self.trace_idx]
             self.cooked_bw = self.all_cooked_bw[self.trace_idx]
-
+#             print("trace index "+str(self.trace_idx) + "\n")
+#             print("bandwidth length:" + str(len(self.cooked_bw)))
+#             print(self.cooked_bw)
+#             print("\n\n")
+            
             # randomize the start point of the video
             # note: trace file starts with time 0
             self.mahimahi_ptr = np.random.randint(1, len(self.cooked_bw))
