@@ -153,7 +153,8 @@ def main():
             assert len(action_prob[0]) == np.sum(mask)
 
             action_cumsum = np.cumsum(action_prob)
-            bit_rate = (action_cumsum > np.random.randint(1, RAND_RANGE) / float(RAND_RANGE)).argmax()
+            # bit_rate = (action_cumsum > np.random.randint(1, RAND_RANGE) / float(RAND_RANGE)).argmax()
+            bit_rate = action_prob.argmax()
             # Note: we need to discretize the probability into 1/RAND_RANGE steps,
             # because there is an intrinsic discrepancy in passing single state and batch states
             action = bitrate_to_action(bit_rate, mask)

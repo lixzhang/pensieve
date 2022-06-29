@@ -71,19 +71,22 @@ class ActorNetwork(object):
 
             split_0 = tflearn.fully_connected(inputs[:, 0:1, -1], 64, activation='relu')
             split_1 = tflearn.fully_connected(inputs[:, 1:2, -1], 64, activation='relu')
-            split_2 = tflearn.fully_connected(inputs[:, 4:5, -1], 64, activation='relu')
+#             split_2 = tflearn.fully_connected(inputs[:, 4:5, -1], 64, activation='relu')
 
-            reshape_0 = tflearn.reshape(inputs[:, 2:4, :], [-1, 2, self.s_dim[1], 1])
-            split_3 = tflearn.conv_2d(reshape_0, 128, 3, activation='relu')
-
+#             reshape_0 = tflearn.reshape(inputs[:, 2:4, :], [-1, 2, self.s_dim[1], 1])
+#             split_3 = tflearn.conv_2d(reshape_0, 128, 3, activation='relu')
+            split_3 = tflearn.conv_1d(inputs[:, 2:3, :], 128, 4, activation='relu')
+    
             split_4 = tflearn.conv_1d(inputs[:, 5:6, :], 128, 4, activation='relu')
             split_5 = tflearn.conv_1d(inputs[:, 6:7, :], 128, 4, activation='relu')
 
             flatten_0 = tflearn.flatten(split_3)
             flatten_1 = tflearn.flatten(split_4)
             flatten_2 = tflearn.flatten(split_5)
+            
 
-            merge_net = tflearn.merge([split_0, split_1, split_2, flatten_0, flatten_1, flatten_2], 'concat')
+#             merge_net = tflearn.merge([split_0, split_1, split_2, flatten_0, flatten_1, flatten_2], 'concat')
+            merge_net = tflearn.merge([split_0, split_1, flatten_0, flatten_1, flatten_2], 'concat')
 
             dense_net_0 = tflearn.fully_connected(merge_net, 128, activation='relu')
 
@@ -195,10 +198,11 @@ class CriticNetwork(object):
             inputs = tflearn.input_data(shape=[None, self.s_dim[0], self.s_dim[1]])
             split_0 = tflearn.fully_connected(inputs[:, 0:1, -1], 64, activation='relu')
             split_1 = tflearn.fully_connected(inputs[:, 1:2, -1], 64, activation='relu')
-            split_2 = tflearn.fully_connected(inputs[:, 4:5, -1], 64, activation='relu')
+#             split_2 = tflearn.fully_connected(inputs[:, 4:5, -1], 64, activation='relu')
 
-            reshape_0 = tflearn.reshape(inputs[:, 2:4, :], [-1, 2, self.s_dim[1], 1])
-            split_3 = tflearn.conv_2d(reshape_0, 128, 3, activation='relu')
+#             reshape_0 = tflearn.reshape(inputs[:, 2:4, :], [-1, 2, self.s_dim[1], 1])
+#             split_3 = tflearn.conv_2d(reshape_0, 128, 3, activation='relu')
+            split_3 = tflearn.conv_1d(inputs[:, 2:3, :], 128, 4, activation='relu')
 
             split_4 = tflearn.conv_1d(inputs[:, 5:6, :], 128, 4, activation='relu')
             split_5 = tflearn.conv_1d(inputs[:, 6:7, :], 128, 4, activation='relu')
@@ -207,7 +211,8 @@ class CriticNetwork(object):
             flatten_1 = tflearn.flatten(split_4)
             flatten_2 = tflearn.flatten(split_5)
 
-            merge_net = tflearn.merge([split_0, split_1, split_2, flatten_0, flatten_1, flatten_2], 'concat')
+#             merge_net = tflearn.merge([split_0, split_1, split_2, flatten_0, flatten_1, flatten_2], 'concat')
+            merge_net = tflearn.merge([split_0, split_1, flatten_0, flatten_1, flatten_2], 'concat')
 
             dense_net_0 = tflearn.fully_connected(merge_net, 100, activation='relu')
             out = tflearn.fully_connected(dense_net_0, 1, activation='linear')

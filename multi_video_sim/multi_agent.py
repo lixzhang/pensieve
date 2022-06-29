@@ -31,10 +31,12 @@ SUMMARY_DIR = './results'
 LOG_FILE = './results/log'
 TEST_LOG_FOLDER = './test_results/'
 TRAIN_TRACES = './cooked_traces/'
-NN_MODEL = './models/nn_model_ep_99600.ckpt'
+NN_MODEL = './models/nn_model_ep_97400.ckpt'
 # NN_MODEL = None
-
-
+epoch = 100000
+epoch_to_train = 20000
+stop = epoch + epoch_to_train
+        
 # for multi-video setting,
 # "bit_rate" is the action *after* masking
 # e.g., bit_rate = 1, mask = [0, 0, 1, 0, 1, 1, ..., 0]
@@ -104,6 +106,7 @@ def testing(epoch, nn_model, log_file, script):
 
 
 def central_agent(net_params_queues, exp_queues):
+    global epoch
 
     assert len(net_params_queues) == NUM_AGENTS
     assert len(exp_queues) == NUM_AGENTS
@@ -126,7 +129,7 @@ def central_agent(net_params_queues, exp_queues):
 
         sess.run(tf.global_variables_initializer())
         writer = tf.summary.FileWriter(SUMMARY_DIR, sess.graph)  # training monitor
-        saver = tf.train.Saver(max_to_keep=20)  # save neural net parameters
+        saver = tf.train.Saver(max_to_keep=30)  # save neural net parameters
 
         # restore neural net parameters
         nn_model = NN_MODEL
@@ -134,8 +137,8 @@ def central_agent(net_params_queues, exp_queues):
             saver.restore(sess, nn_model)
             print("Model restored.")
 
-        epoch = 100000 # 100000
-        stop = epoch + 20000
+#         epoch = 0 # 100000
+#         stop = epoch + 20000
 
         # while True:  # assemble experiences from agents, compute the gradients
         while True:
