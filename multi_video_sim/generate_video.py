@@ -13,7 +13,7 @@ BITRATE_LEVELS = [200, 300, 450, 750, 1200, 1850, 2850, 4300, 6000, 8000]  # Kbp
 # MEAN_VIDEO_SIZE = [0.1, 0.15, 0.38, 0.6, 0.93, 1.43, 2.15, 3.25, 4.5, 6]  # MB
 # MEAN_VIDEO_SIZE = [0.1, 0.15, 0.23, 0.38, 0.6, 0.93, 1.43, 2.15, 3, 4]  # MB
 STD_VIDEO_SIZE_NOISE = 0.1
-VIDEO_FOLDER = './videos/'
+VIDEO_FOLDER = './videos_t/'
 
 def generate_chunk_length():
     # Poisson mixture
@@ -25,8 +25,7 @@ def generate_chunk_length():
 	else:
 		pois_lam = 9
 	duration = np.random.poisson(pois_lam, 1)[0] + 1
-	MEAN_VIDEO_SIZE = [round(e * duration * 1. / 8 / 10**3, 3) for e in BITRATE_LEVELS]
-	return MEAN_VIDEO_SIZE
+	return duration
 
 np.random.seed(RANDOM_SEED)
 all_bitrate_idx = np.array(range(MAX_NUM_BITRATES))
@@ -35,7 +34,9 @@ mask_bitrate_idx_to_shuffle = np.array(range(MAX_NUM_BITRATES))
 for video_idx in xrange(NUM_VIDEOS):
 	num_bitrates = np.random.randint(MIN_NUM_BITRATES, MAX_NUM_BITRATES + 1)
 	num_chunks = np.random.randint(MIN_NUM_CHUNKS, MAX_NUM_CHUNKS + 1)
-	MEAN_VIDEO_SIZE = generate_chunk_length
+	duration = generate_chunk_length()
+	MEAN_VIDEO_SIZE = [round(e * duration * 1. / 8 / 10**3, 3) for e in BITRATE_LEVELS]
+# 	MEAN_VIDEO_SIZE = generate_chunk_length
 # 	import pdb; pdb.set_trace()
     
 	np.random.shuffle(mask_bitrate_idx_to_shuffle)
