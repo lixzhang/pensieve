@@ -21,7 +21,7 @@ VIDEO_BIT_RATE = [200,300,450,750,1200,1850,2850,4300,6000,8000]  # Kbps
 BUFFER_NORM_FACTOR = 10.0
 M_IN_K = 1000.0
 M_IN_B = 1000000.0
-REBUF_PENALTY = 4.3  # 1 sec rebuffering -> 3 Mbps
+REBUF_PENALTY = 50 # 4.3  # 1 sec rebuffering -> 3 Mbps
 SMOOTH_PENALTY = 1
 DEFAULT_QUALITY = 1  # default video quality without agent
 RANDOM_SEED = 42
@@ -31,10 +31,10 @@ SUMMARY_DIR = './results'
 LOG_FILE = './results/log'
 TEST_LOG_FOLDER = './test_results/'
 TRAIN_TRACES = './cooked_traces/'
-NN_MODEL = './models/nn_model_ep_97400.ckpt'
+NN_MODEL = './models/nn_model_ep_10100.ckpt'
 # NN_MODEL = None
-epoch = 100000
-epoch_to_train = 20000
+epoch = 20000
+epoch_to_train = 10000
 stop = epoch + epoch_to_train
         
 # for multi-video setting,
@@ -129,7 +129,7 @@ def central_agent(net_params_queues, exp_queues):
 
         sess.run(tf.global_variables_initializer())
         writer = tf.summary.FileWriter(SUMMARY_DIR, sess.graph)  # training monitor
-        saver = tf.train.Saver(max_to_keep=30)  # save neural net parameters
+        saver = tf.train.Saver(max_to_keep=200)  # save neural net parameters
 
         # restore neural net parameters
         nn_model = NN_MODEL
@@ -275,13 +275,13 @@ def agent(agent_id, net_params_queue, exp_queue):
             delay, sleep_time, buffer_size, \
                 rebuf, video_chunk_size, end_of_video, \
                 video_chunk_remain, video_num_chunks, \
-                next_video_chunk_size, mask = \
+                next_video_chunk_size, mask, chunk_length = \
                 net_env.get_video_chunk(bit_rate)
 
             time_stamp += delay  # in ms
             time_stamp += sleep_time  # in ms
 
-            reward = VIDEO_BIT_RATE[action] / M_IN_K \
+            reward = VIDEO_BIT_RATE[action] / M_IN_K / chunk_length * 4 \
                      - REBUF_PENALTY * rebuf \
                      - SMOOTH_PENALTY * np.abs(VIDEO_BIT_RATE[action] -
                                                VIDEO_BIT_RATE[last_action]) / M_IN_K

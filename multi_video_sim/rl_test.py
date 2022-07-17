@@ -99,13 +99,13 @@ def main():
             delay, sleep_time, buffer_size, \
                 rebuf, video_chunk_size, end_of_video, \
                 video_chunk_remain, video_num_chunks, \
-                next_video_chunk_size, mask = \
+                next_video_chunk_size, mask, chunk_length = \
                 net_env.get_video_chunk(bit_rate)
 
             time_stamp += delay  # in ms
             time_stamp += sleep_time  # in ms
 
-            reward = VIDEO_BIT_RATE[action] / M_IN_K \
+            reward = VIDEO_BIT_RATE[action] / M_IN_K /chunk_length * 4 \
                      - REBUF_PENALTY * rebuf \
                      - SMOOTH_PENALTY * np.abs(VIDEO_BIT_RATE[action] -
                                                VIDEO_BIT_RATE[last_action]) / M_IN_K

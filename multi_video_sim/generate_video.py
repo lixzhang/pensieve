@@ -1,11 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
+import random
 
 RANDOM_SEED = 42
 NUM_VIDEOS = 10000
 MAX_NUM_BITRATES = 10
-MIN_NUM_BITRATES = 3
+MIN_NUM_BITRATES = 2
 MAX_NUM_CHUNKS = 100 # 2000 # 100
 MIN_NUM_CHUNKS = 20 # 100 # 20
 # bit rate candidates
@@ -13,7 +13,7 @@ BITRATE_LEVELS = [200, 300, 450, 750, 1200, 1850, 2850, 4300, 6000, 8000]  # Kbp
 # MEAN_VIDEO_SIZE = [0.1, 0.15, 0.38, 0.6, 0.93, 1.43, 2.15, 3.25, 4.5, 6]  # MB
 # MEAN_VIDEO_SIZE = [0.1, 0.15, 0.23, 0.38, 0.6, 0.93, 1.43, 2.15, 3, 4]  # MB
 STD_VIDEO_SIZE_NOISE = 0.1
-VIDEO_FOLDER = './videos_t/'
+VIDEO_FOLDER = './videos/'
 
 def generate_chunk_length():
     # Poisson mixture
@@ -27,6 +27,15 @@ def generate_chunk_length():
 	duration = np.random.poisson(pois_lam, 1)[0] + 1
 	return duration
 
+def generate_chunk_length_video():
+	diffs = [0, 2, 4]
+	lowest_lengths = [e for e in xrange(1, 7)]
+	diff = random.choice(diffs)
+	lowest_length = random.choice(lowest_lengths)
+	# import pdb; pdb.set_trace()
+	highest_length = lowest_length + diff
+	return list(xrange(lowest_length, highest_length+1, 2))
+    
 np.random.seed(RANDOM_SEED)
 all_bitrate_idx = np.array(range(MAX_NUM_BITRATES))
 mask_bitrate_idx_to_shuffle = np.array(range(MAX_NUM_BITRATES))
@@ -34,10 +43,10 @@ mask_bitrate_idx_to_shuffle = np.array(range(MAX_NUM_BITRATES))
 for video_idx in xrange(NUM_VIDEOS):
 	num_bitrates = np.random.randint(MIN_NUM_BITRATES, MAX_NUM_BITRATES + 1)
 	num_chunks = np.random.randint(MIN_NUM_CHUNKS, MAX_NUM_CHUNKS + 1)
-	duration = generate_chunk_length()
-	MEAN_VIDEO_SIZE = [round(e * duration * 1. / 8 / 10**3, 3) for e in BITRATE_LEVELS]
-# 	MEAN_VIDEO_SIZE = generate_chunk_length
-# 	import pdb; pdb.set_trace()
+# 	duration = generate_chunk_length()
+# 	MEAN_VIDEO_SIZE = [round(e * duration * 1. / 8 / 10**3, 3) for e in BITRATE_LEVELS]
+
+	chunk_lengths = generate_chunk_length_video()
     
 	np.random.shuffle(mask_bitrate_idx_to_shuffle)
 
@@ -52,7 +61,7 @@ for video_idx in xrange(NUM_VIDEOS):
 		mask_bitrate_idx.sort()
 
 	with open(VIDEO_FOLDER + str(video_idx), 'wb') as f:
-		f.write(str(num_bitrates) + '\t' + str(num_chunks) + '\t' + str(duration) + '\n')
+		f.write(str(num_bitrates) + '\t' + str(num_chunks) + '\n')
 		for i in xrange(MAX_NUM_BITRATES):
 			if i in mask_bitrate_idx:
 				f.write('1' + '\t')
@@ -61,8 +70,11 @@ for video_idx in xrange(NUM_VIDEOS):
 		f.write('\n')
 
 		for _ in xrange(num_chunks):
+			duration = random.choice(chunk_lengths)
+			MEAN_VIDEO_SIZE = [round(e * duration * 1. / 8 / 10**3, 3) for e in BITRATE_LEVELS]
 			for i in xrange(num_bitrates):
 				mean = MEAN_VIDEO_SIZE[mask_bitrate_idx[i]]
 				noise = max(0.1, np.random.normal(1, STD_VIDEO_SIZE_NOISE))
 				f.write(str(mean * noise) + '\t')
+			f.write(str(duration) + '\t')
 			f.write('\n')	

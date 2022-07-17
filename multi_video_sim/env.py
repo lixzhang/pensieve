@@ -70,6 +70,7 @@ class Environment:
 		# -- video configurations --
 		self.video_num_bitrates = {}
 		self.video_num_chunks = {}
+		self.video_chunk_length = {}        
 		self.video_masks = {}
 		self.video_sizes = {}
 
@@ -78,6 +79,7 @@ class Environment:
 
 		for video_file in video_files:
 			video_sizes = []
+			video_chunk_length = []
 			with open(self.video_folder + video_file, 'rb') as f:
 				line_counter = 0
 				for line in f:
@@ -93,15 +95,18 @@ class Environment:
 						assert np.sum(video_mask) == video_num_bitrates
 
 					else:
-						video_size = [float(i)*B_IN_MB for i in parse]
+						video_size = [float(i)*B_IN_MB for i in parse[:-1]]
 						assert len(video_size) == video_num_bitrates
 						video_sizes.append(video_size)
+						video_chunk_length.append(int(parse[-1])*1000)
 				assert len(video_sizes) == video_num_chunks
 			
 			assert int(video_file) not in self.video_num_bitrates
 			self.video_num_bitrates[int(video_file)] = video_num_bitrates
 			assert int(video_file) not in self.video_num_chunks
 			self.video_num_chunks[int(video_file)] = video_num_chunks
+			assert int(video_file) not in self.video_chunk_length
+			self.video_chunk_length[int(video_file)] = video_chunk_length            
 			assert int(video_file) not in self.video_masks
 			self.video_masks[int(video_file)] = video_mask
 			assert int(video_file) not in self.video_sizes
@@ -109,6 +114,7 @@ class Environment:
 
 		assert(len(self.video_num_bitrates) == self.num_videos)
 		assert(len(self.video_num_chunks) == self.num_videos)
+		assert(len(self.video_chunk_length) == self.num_videos)        
 		assert(len(self.video_masks) == self.num_videos)
 		assert(len(self.video_sizes) == self.num_videos)
 
@@ -173,7 +179,8 @@ class Environment:
 		self.buffer_size = np.maximum(self.buffer_size - delay, 0.0)
 
 		# add in the new chunk
-		self.buffer_size += VIDEO_CHUNCK_LEN
+		self.buffer_size += self.video_chunk_length[self.video_idx][self.chunk_idx]
+		chunk_length = self.video_chunk_length[self.video_idx][self.chunk_idx]
 
 		# sleep if buffer gets too large
 		sleep_time = 0
@@ -251,7 +258,7 @@ class Environment:
 			video_chunk_remain, \
 			video_num_chunks, \
 			next_video_chunk_sizes, \
-			bitrate_mask
+			bitrate_mask, chunk_length / MILLISECONDS_IN_SECOND
 
 
 def main():
