@@ -281,7 +281,7 @@ def agent(agent_id, net_params_queue, exp_queue):
             time_stamp += delay  # in ms
             time_stamp += sleep_time  # in ms
 
-            reward = VIDEO_BIT_RATE[action] / M_IN_K / chunk_length * 4 \
+            reward = VIDEO_BIT_RATE[action] / M_IN_K \
                      - REBUF_PENALTY * rebuf \
                      - SMOOTH_PENALTY * np.abs(VIDEO_BIT_RATE[action] -
                                                VIDEO_BIT_RATE[last_action]) / M_IN_K
