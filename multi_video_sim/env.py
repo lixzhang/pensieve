@@ -1,6 +1,6 @@
 import os
 import numpy as np
-
+import random
 
 RANDOM_SEED = 42
 MAX_NUM_BITRATES = 10
@@ -30,6 +30,10 @@ class Environment:
 		self.fixed_env = fixed_env
 		self.trace_folder = trace_folder
 		self.video_folder = video_folder
+        
+		self.buffer_limit = BUFFER_THRESH
+		if not self.fixed_env:        
+			self.buffer_limit = random.randint(50, 300) * MILLISECONDS_IN_SECOND
 
 		# -- network traces --
 		cooked_files = os.listdir(self.trace_folder)
@@ -184,11 +188,11 @@ class Environment:
 
 		# sleep if buffer gets too large
 		sleep_time = 0
-		if self.buffer_size > BUFFER_THRESH:
+		if self.buffer_size > self.buffer_limit: # BUFFER_THRESH:
 			# exceed the buffer limit
 			# we need to skip some network bandwidth here
 			# but do not add up the delay
-			drain_buffer_time = self.buffer_size - BUFFER_THRESH
+			drain_buffer_time = self.buffer_size - self.buffer_limit # BUFFER_THRESH
 			sleep_time = np.ceil(drain_buffer_time / DRAIN_BUFFER_SLEEP_TIME) * \
 						 DRAIN_BUFFER_SLEEP_TIME
 			self.buffer_size -= sleep_time
@@ -214,6 +218,7 @@ class Environment:
 		# In the new version the buffer always have at least
 		# one chunk of video
 		return_buffer_size = self.buffer_size
+		return_buffer_limit = self.buffer_limit
 
 		self.chunk_idx += 1
 
@@ -241,6 +246,8 @@ class Environment:
 				# randomize the start point of the trace
 				# note: trace file starts with time 0
 				self.mahimahi_ptr = np.random.randint(1, len(self.cooked_bw))
+                
+				self.buffer_limit = random.randint(50, 300) * MILLISECONDS_IN_SECOND
 
 			self.last_mahimahi_time = self.cooked_time[self.mahimahi_ptr - 1]
 
@@ -258,7 +265,8 @@ class Environment:
 			video_chunk_remain, \
 			video_num_chunks, \
 			next_video_chunk_sizes, \
-			bitrate_mask, chunk_length / MILLISECONDS_IN_SECOND
+			bitrate_mask, chunk_length / MILLISECONDS_IN_SECOND, \
+			return_buffer_limit / MILLISECONDS_IN_SECOND
 
 
 def main():
