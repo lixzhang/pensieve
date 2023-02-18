@@ -59,9 +59,9 @@ def main():
                               video_folder=TEST_VIDEO_FOLDER)
 
     log_path = LOG_FILE + '_' + net_env.all_file_names[net_env.trace_idx]
-    log_file = open(log_path, 'wb')
+    log_file = open(log_path, 'w')
 
-    with tf.Session() as sess:
+    with tf.compat.v1.Session() as sess:
 
         actor = a3c.ActorNetwork(sess,
                                  state_dim=[S_INFO, S_LEN], action_dim=A_DIM,
@@ -71,8 +71,8 @@ def main():
                                    state_dim=[S_INFO, S_LEN],
                                    learning_rate=CRITIC_LR_RATE)
 
-        sess.run(tf.global_variables_initializer())
-        saver = tf.train.Saver()  # save neural net parameters
+        sess.run(tf.compat.v1.global_variables_initializer())
+        saver = tf.compat.v1.train.Saver()  # save neural net parameters
 
         # restore neural net parameters
         if NN_MODEL is not None:  # NN_MODEL is the path to file
@@ -140,7 +140,7 @@ def main():
             state[4, -1] = video_chunk_remain / float(video_num_chunks)
             state[5, :] = -1
             nxt_chnk_cnt = 0
-            for i in xrange(A_DIM):
+            for i in range(A_DIM):
                 if mask[i] == 1:
                     state[5, i] = next_video_chunk_size[nxt_chnk_cnt] / M_IN_B
                     nxt_chnk_cnt += 1
@@ -183,7 +183,7 @@ def main():
                     break
 
                 log_path = LOG_FILE + '_' + net_env.all_file_names[net_env.trace_idx]
-                log_file = open(log_path, 'wb')
+                log_file = open(log_path, 'w')
 
 
 if __name__ == '__main__':
