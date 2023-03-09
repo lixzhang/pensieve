@@ -102,7 +102,7 @@ class Environment:
 						video_size = [float(i)*B_IN_MB for i in parse[:-1]]
 						assert len(video_size) == video_num_bitrates
 						video_sizes.append(video_size)
-						video_chunk_length.append(int(parse[-1])*1000)
+						video_chunk_length.append(float(parse[-1])*1000)
 				assert len(video_sizes) == video_num_chunks
 			
 			assert int(video_file) not in self.video_num_bitrates
@@ -255,7 +255,9 @@ class Environment:
 		video_chunk_remain = self.video_num_chunks[self.video_idx] - self.chunk_idx
 		next_video_chunk_sizes = self.video_sizes[self.video_idx][self.chunk_idx]
 		bitrate_mask = self.video_masks[self.video_idx]
-
+		next_video_chunk_duration = self.video_chunk_length[self.video_idx][self.chunk_idx]
+		next_bw = self.cooked_bw[self.mahimahi_ptr]
+        
 		return delay, \
 			sleep_time, \
 			return_buffer_size / MILLISECONDS_IN_SECOND, \
@@ -266,7 +268,9 @@ class Environment:
 			video_num_chunks, \
 			next_video_chunk_sizes, \
 			bitrate_mask, chunk_length / MILLISECONDS_IN_SECOND, \
-			return_buffer_limit / MILLISECONDS_IN_SECOND
+			return_buffer_limit / MILLISECONDS_IN_SECOND, \
+			next_video_chunk_duration / MILLISECONDS_IN_SECOND, \
+			next_bw / BITS_IN_BYTE
 
 
 def main():

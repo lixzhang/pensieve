@@ -3,7 +3,7 @@ import sys
 os.environ['CUDA_VISIBLE_DEVICES']=''
 import numpy as np
 import tensorflow as tf
-import a3cV59 as a3c
+import a3cV13 as a3c
 import env
 
 
@@ -16,15 +16,17 @@ NUM_AGENTS = 16
 TRAIN_SEQ_LEN = 200  # take as a train batch
 MODEL_SAVE_INTERVAL = 100
 VIDEO_BIT_RATE = [200,300,450,750,1200,1850,2850,4300,6000,8000]  # Kbps
+HD_REWARD = [0.5, 1, 1.5, 2, 3, 12, 15, 20, 28, 38] # logic: linear interpretation for 200 and 450; for 6000 and 8000 use the same ratio as for 4300
+# HD_REWARD = [e * 1.5 for e in HD_REWARD]
 BUFFER_NORM_FACTOR = 10.0
 M_IN_K = 1000.0
 M_IN_B = 1000000.0
 FIRST_CHUNKS = 10
-REBUF_PENALTY = 150 # 4.3  # 1 sec rebuffering -> 3 Mbps
+REBUF_PENALTY = 4.3 # 4.3  # 1 sec rebuffering -> 3 Mbps
 REBUF_PENALTY_FIRST = 4.3
-SMOOTH_PENALTY = 2
+SMOOTH_PENALTY = 1.
 BUFFER_THRESH = 30
-SMOOTH_NEGATIVE_MUL_HIGH = 10
+SMOOTH_NEGATIVE_MUL_HIGH = 1
 SMOOTH_NEGATIVE_MUL_LOW = 1
 DEFAULT_QUALITY = 1  # default video quality without agent
 RANDOM_SEED = 42
@@ -108,7 +110,7 @@ def main():
             delay, sleep_time, buffer_size, \
                 rebuf, video_chunk_size, end_of_video, \
                 video_chunk_remain, video_num_chunks, \
-                next_video_chunk_size, mask, chunk_length, buffer_limit = \
+                next_video_chunk_size, mask, chunk_length, buffer_limit, next_video_chunk_duration, next_bw = \
                 net_env.get_video_chunk(bit_rate)
 
             time_stamp += delay  # in ms
@@ -121,18 +123,37 @@ def main():
 #                                                VIDEO_BIT_RATE[last_action]) / M_IN_K
 
             # 2. use higher penalty for smoothness
-            if VIDEO_BIT_RATE[action] - VIDEO_BIT_RATE[last_action] >= 0:
-                smoothness = np.abs(VIDEO_BIT_RATE[action] - VIDEO_BIT_RATE[last_action]) / M_IN_K
+#             if VIDEO_BIT_RATE[action] - VIDEO_BIT_RATE[last_action] >= 0:
+#                 # smoothness = np.abs(VIDEO_BIT_RATE[action] - VIDEO_BIT_RATE[last_action]) / M_IN_K
 #                 smoothness = 0
-            else:
-                if prev_buffer > BUFFER_THRESH:
-                    smoothness = SMOOTH_NEGATIVE_MUL_HIGH * np.abs(VIDEO_BIT_RATE[action] - VIDEO_BIT_RATE[last_action]) / M_IN_K
-                else:
-                    smoothness = SMOOTH_NEGATIVE_MUL_LOW * np.abs(VIDEO_BIT_RATE[action] - VIDEO_BIT_RATE[last_action]) / M_IN_K
+#             else:
+#                 if prev_buffer > BUFFER_THRESH:
+#                     # smoothness = SMOOTH_NEGATIVE_MUL_HIGH * np.abs(VIDEO_BIT_RATE[action] - VIDEO_BIT_RATE[last_action]) / M_IN_K
+#                     smoothness = SMOOTH_NEGATIVE_MUL_HIGH * np.abs(VIDEO_BIT_RATE[action] - VIDEO_BIT_RATE[last_action]) 
+#                 else:
+#                     # smoothness = SMOOTH_NEGATIVE_MUL_LOW * np.abs(VIDEO_BIT_RATE[action] - VIDEO_BIT_RATE[last_action]) / M_IN_K
+#                     smoothness = SMOOTH_NEGATIVE_MUL_LOW * np.abs(VIDEO_BIT_RATE[action] - VIDEO_BIT_RATE[last_action])
             
-            reward = VIDEO_BIT_RATE[action] / M_IN_K \
-                     - REBUF_PENALTY * rebuf \
-                     - SMOOTH_PENALTY * smoothness
+#             reward = VIDEO_BIT_RATE[action] / M_IN_K \
+#                      - REBUF_PENALTY * rebuf \
+#                      - SMOOTH_PENALTY * smoothness
+
+            # 2.1 use higher penalty for smoothness
+#             if VIDEO_BIT_RATE[action] - VIDEO_BIT_RATE[last_action] >= 0:
+#                 # smoothness = np.abs(VIDEO_BIT_RATE[action] - VIDEO_BIT_RATE[last_action]) / M_IN_K
+#                 smoothness = 0
+#             else:
+#                 if prev_buffer > BUFFER_THRESH:
+#                     # smoothness = SMOOTH_NEGATIVE_MUL_HIGH * np.abs(VIDEO_BIT_RATE[action] - VIDEO_BIT_RATE[last_action]) / M_IN_K
+#                     smoothness = SMOOTH_NEGATIVE_MUL_HIGH * np.abs(VIDEO_BIT_RATE[action] - VIDEO_BIT_RATE[last_action]) / VIDEO_BIT_RATE[last_action]
+#                 else:
+#                     # smoothness = SMOOTH_NEGATIVE_MUL_LOW * np.abs(VIDEO_BIT_RATE[action] - VIDEO_BIT_RATE[last_action]) / M_IN_K
+#                     smoothness = SMOOTH_NEGATIVE_MUL_LOW * np.abs(VIDEO_BIT_RATE[action] - VIDEO_BIT_RATE[last_action]) / VIDEO_BIT_RATE[last_action]
+            
+#             reward = VIDEO_BIT_RATE[action] / M_IN_K \
+#                      - REBUF_PENALTY * rebuf \
+#                      - SMOOTH_PENALTY * smoothness
+
 
             # 3. use indicator instead of bitrate for smoothness
 #             if bit_rate - last_bit_rate >= 0:
@@ -177,6 +198,26 @@ def main():
 #                          - REBUF_PENALTY * rebuf \
 #                          - SMOOTH_PENALTY * smoothness
                 
+#             # 6. HD rewardh
+#             reward = HD_REWARD[bit_rate] \
+#                      - REBUF_PENALTY * rebuf \
+#                      - SMOOTH_PENALTY * max(HD_REWARD[last_action] - HD_REWARD[action], 0)
+     
+#             # 7. HD reward, weighted by chunk length
+            reward = HD_REWARD[bit_rate] * chunk_length \
+                     - REBUF_PENALTY * rebuf \
+                     - SMOOTH_PENALTY * max(HD_REWARD[last_action] - HD_REWARD[action], 0)
+            
+#             # 8. HD reward, weighted by chunk length
+#             reward = HD_REWARD[bit_rate] * chunk_length \
+#                      - REBUF_PENALTY * rebuf \
+#                      - SMOOTH_PENALTY * max((HD_REWARD[last_action] - HD_REWARD[action])*1.0/HD_REWARD[action], 0)
+            
+            # 9. HD reward, weighted by chunk length
+#             reward = HD_REWARD[bit_rate] * chunk_length \
+#                      - REBUF_PENALTY * rebuf \
+#                      - SMOOTH_PENALTY * np.abs(HD_REWARD[last_action] - HD_REWARD[action])
+
             prev_buffer = buffer_size
             last_bit_rate = bit_rate
             last_action = action
@@ -201,12 +242,12 @@ def main():
             state = np.roll(state, -1, axis=1)
 
             # this should be S_INFO number of terms
-            state[0, -1] = VIDEO_BIT_RATE[action] / float(np.max(VIDEO_BIT_RATE))  # last quality
+            state[0, -1] = VIDEO_BIT_RATE[action] / float(np.max(VIDEO_BIT_RATE)) * 10.  # last quality
             # state[0, -1] = VIDEO_BIT_RATE[action] / float(VIDEO_BIT_RATE[highest_action])  # last quality
             state[1, -1] = buffer_size / BUFFER_NORM_FACTOR
             # state[1, -1] = buffer_size *1.0 / buffer_limit * 10.0
             state[2, -1] = float(video_chunk_size) / float(delay) / M_IN_K  # kilo byte / ms
-            state[3, -1] = float(delay) / M_IN_K
+            state[3, -1] = next_bw  # float(delay) / M_IN_K
             # state[4, -1] = video_chunk_remain / float(video_num_chunks)
             state[4, -1] = float(buffer_limit) / 10.0
             state[5, :] = -1
@@ -215,6 +256,11 @@ def main():
                 if mask[i] == 1:
                     state[5, i] = next_video_chunk_size[nxt_chnk_cnt] / M_IN_B
                     nxt_chnk_cnt += 1
+#             VIDEO_CHUNK_SIZE = [round(e * next_video_chunk_duration / 8. / M_IN_K, 3) for e in VIDEO_BIT_RATE] # MB
+#             for i in xrange(A_DIM):
+#                 if mask[i] == 1:
+#                     state[5, i] = VIDEO_CHUNK_SIZE[i]
+#                     nxt_chnk_cnt += 1  
             assert(nxt_chnk_cnt) == np.sum(mask)
             state[6, -A_DIM:] = mask
 
