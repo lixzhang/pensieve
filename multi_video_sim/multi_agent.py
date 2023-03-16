@@ -5,7 +5,7 @@ import multiprocessing as mp
 os.environ['CUDA_VISIBLE_DEVICES']=''
 import tensorflow as tf
 import env
-import a3c
+import a3cV13 as a3c
 
 
 S_INFO = 7  # bit_rate, buffer_size, bandwidth_measurement, measurement_time, chunk_til_video_end
@@ -13,16 +13,23 @@ S_LEN = 10  # take how many frames in the past
 A_DIM = 10
 ACTOR_LR_RATE = 0.0001
 CRITIC_LR_RATE = 0.0001
-NUM_AGENTS = 16
+NUM_AGENTS = 96
 TRAIN_SEQ_LEN = 200  # take as a train batch
 MODEL_SAVE_INTERVAL = 100
 VIDEO_BIT_RATE = [200,300,450,750,1200,1850,2850,4300,6000,8000]  # Kbps
+HD_REWARD = [0.5, 1, 1.5, 2, 3, 12, 15, 20, 28, 38] # logic: linear interpretation for 200 and 450; for 6000 and 8000 use the same ratio as for 4300
+# HD_REWARD = [e * 1.5 for e in HD_REWARD]
 BUFFER_NORM_FACTOR = 10.0
 M_IN_K = 1000.0
 M_IN_B = 1000000.0
-REBUF_PENALTY = 4.3  # 1 sec rebuffering -> 3 Mbps
-SMOOTH_PENALTY = 1
-DEFAULT_QUALITY = 1  # default video quality without agent
+FIRST_CHUNKS = 10
+REBUF_PENALTY = 4.3 # 4.3  # 1 sec rebuffering -> 3 Mbps
+REBUF_PENALTY_FIRST = 4.3
+SMOOTH_PENALTY = 1.
+BUFFER_THRESH = 30
+SMOOTH_NEGATIVE_MUL_HIGH = 1
+SMOOTH_NEGATIVE_MUL_LOW = 1
+DEFAULT_QUALITY = 0  # default video quality without agent
 RANDOM_SEED = 42
 RAND_RANGE = 1000
 MODEL_DIR = './models/'
@@ -30,12 +37,14 @@ SUMMARY_DIR = './results'
 LOG_FILE = './results/log'
 TEST_LOG_FOLDER = './test_results/'
 TRAIN_TRACES = './cooked_traces/'
-NN_MODEL = './models/nn_model_ep_118100.ckpt'
+NN_MODEL = './models/nn_model_ep_9100.ckpt'
 # NN_MODEL = None
-epoch = 120000
-epoch_to_train = 20000
+epoch = 10000
+epoch_to_train = 10000
 end_epoch = epoch + epoch_to_train
 
+if not os.path.exists(MODEL_DIR): os.makedirs(MODEL_DIR)
+    
 # for multi-video setting,
 # "bit_rate" is the action *after* masking
 # e.g., bit_rate = 1, mask = [0, 0, 1, 0, 1, 1, ..., 0]
@@ -93,13 +102,13 @@ def testing(epoch, nn_model, log_file):
     rewards_95per = round(np.percentile(rewards, 95), 1)
     rewards_max = round(np.max(rewards), 1)
 
-    log_file.write(str(epoch).zfill(6) + '\t' +
-                   str(rewards_min) + '\t' +
-                   str(rewards_5per) + '\t' +
-                   str(rewards_mean) + '\t' +
-                   str(rewards_median) + '\t' +
-                   str(rewards_95per) + '\t' +
-                   str(rewards_max) + '\n')
+    log_file.write(str(epoch).rjust(6) + '\t' +
+                   str(rewards_min).rjust(10) + '\t' +
+                   str(rewards_5per).rjust(10) + '\t' +
+                   str(rewards_mean).rjust(10) + '\t' +
+                   str(rewards_median).rjust(10) + '\t' +
+                   str(rewards_95per).rjust(10) + '\t' +
+                   str(rewards_max).rjust(10) + '\n')
     log_file.flush()
 
 
@@ -251,7 +260,8 @@ def agent(agent_id, net_params_queue, exp_queue):
 
         action = bitrate_to_action(bit_rate, mask)
         last_action = action
-
+        highest_action = bitrate_to_action(np.sum(mask)-1, mask)  
+        
         action_vec = np.zeros(np.sum(mask))
         action_vec[bit_rate] = 1
 
@@ -261,6 +271,8 @@ def agent(agent_id, net_params_queue, exp_queue):
         entropy_record = []
 
         time_stamp = 0
+        prev_buffer = 0
+        n_chunks = 0        
         while True:  # experience video streaming forever
 
             # the action is from the last decision
@@ -268,19 +280,25 @@ def agent(agent_id, net_params_queue, exp_queue):
             delay, sleep_time, buffer_size, \
                 rebuf, video_chunk_size, end_of_video, \
                 video_chunk_remain, video_num_chunks, \
-                next_video_chunk_size, mask = \
+                next_video_chunk_size, mask, chunk_length, buffer_limit, next_video_chunk_duration, next_bw = \
                 net_env.get_video_chunk(bit_rate)
 
             time_stamp += delay  # in ms
             time_stamp += sleep_time  # in ms
 
-            reward = VIDEO_BIT_RATE[action] / M_IN_K \
+#             reward = VIDEO_BIT_RATE[action] / M_IN_K \
+#                      - REBUF_PENALTY * rebuf \
+#                      - SMOOTH_PENALTY * np.abs(VIDEO_BIT_RATE[action] -
+#                                                VIDEO_BIT_RATE[last_action]) / M_IN_K
+            
+            # 7. HD reward, weighted by chunk length
+            reward = HD_REWARD[bit_rate] * chunk_length \
                      - REBUF_PENALTY * rebuf \
-                     - SMOOTH_PENALTY * np.abs(VIDEO_BIT_RATE[action] -
-                                               VIDEO_BIT_RATE[last_action]) / M_IN_K
+                     - SMOOTH_PENALTY * max(HD_REWARD[last_action] - HD_REWARD[action], 0)
 
             r_batch.append(reward)
 
+            prev_buffer = buffer_size
             last_bit_rate = bit_rate
             last_action = action
 
@@ -294,7 +312,7 @@ def agent(agent_id, net_params_queue, exp_queue):
             state = np.roll(state, -1, axis=1)
 
             # this should be S_INFO number of terms
-            state[0, -1] = VIDEO_BIT_RATE[action] / float(np.max(VIDEO_BIT_RATE))  # last quality
+            state[0, -1] = VIDEO_BIT_RATE[action] / float(np.max(VIDEO_BIT_RATE)) * 10  # last quality
             state[1, -1] = buffer_size / BUFFER_NORM_FACTOR
             state[2, -1] = float(video_chunk_size) / float(delay) / M_IN_K  # kilo byte / ms
             state[3, -1] = float(delay) / M_IN_K

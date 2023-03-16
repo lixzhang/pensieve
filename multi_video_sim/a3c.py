@@ -4,7 +4,7 @@ import tflearn
 
 
 GAMMA = 0.99
-ENTROPY_WEIGHT = 0.03
+ENTROPY_WEIGHT = 1
 ENTROPY_EPS = 1e-6
 EPS = 1e-6
 MAX_BR_LEVELS = 10

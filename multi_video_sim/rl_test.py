@@ -3,7 +3,7 @@ import sys
 os.environ['CUDA_VISIBLE_DEVICES']=''
 import numpy as np
 import tensorflow as tf
-import a3c
+import a3cV13 as a3c
 import env
 
 
@@ -16,11 +16,18 @@ NUM_AGENTS = 16
 TRAIN_SEQ_LEN = 200  # take as a train batch
 MODEL_SAVE_INTERVAL = 100
 VIDEO_BIT_RATE = [200,300,450,750,1200,1850,2850,4300,6000,8000]  # Kbps
+HD_REWARD = [0.5, 1, 1.5, 2, 3, 12, 15, 20, 28, 38] # logic: linear interpretation for 200 and 450; for 6000 and 8000 use the same ratio as for 4300
+# HD_REWARD = [e * 1.5 for e in HD_REWARD]
 BUFFER_NORM_FACTOR = 10.0
 M_IN_K = 1000.0
 M_IN_B = 1000000.0
-REBUF_PENALTY = 4.3  # 1 sec rebuffering -> 3 Mbps
-SMOOTH_PENALTY = 1
+FIRST_CHUNKS = 10
+REBUF_PENALTY = 4.3 # 4.3  # 1 sec rebuffering -> 3 Mbps
+REBUF_PENALTY_FIRST = 4.3
+SMOOTH_PENALTY = 1.
+BUFFER_THRESH = 30
+SMOOTH_NEGATIVE_MUL_HIGH = 1
+SMOOTH_NEGATIVE_MUL_LOW = 1
 DEFAULT_QUALITY = 1  # default video quality without agent
 RANDOM_SEED = 42
 RAND_RANGE = 1000
@@ -80,35 +87,45 @@ def main():
             print("Testing model restored.")
 
         time_stamp = 0
-
+        
+        mask = net_env.video_masks[net_env.video_idx]
+        
         last_bit_rate = DEFAULT_QUALITY
         bit_rate = DEFAULT_QUALITY
 
         action = bitrate_to_action(bit_rate, net_env.video_masks[net_env.video_idx])
         last_action = action
-
+        highest_action = bitrate_to_action(np.sum(mask)-1, mask)     
+        
         s_batch = [np.zeros((S_INFO, S_LEN))]
 
         entropy_record = []
 
         video_count = 0
-
+        prev_buffer = 0
+        n_chunks = 0
+        
         while True:  # serve video forever
             # the action is from the last decision
             # this is to make the framework similar to the real
             delay, sleep_time, buffer_size, \
                 rebuf, video_chunk_size, end_of_video, \
                 video_chunk_remain, video_num_chunks, \
-                next_video_chunk_size, mask = \
+                next_video_chunk_size, mask, chunk_length, buffer_limit, next_video_chunk_duration, next_bw = \
                 net_env.get_video_chunk(bit_rate)
 
             time_stamp += delay  # in ms
             time_stamp += sleep_time  # in ms
 
-            reward = VIDEO_BIT_RATE[action] / M_IN_K \
+#             reward = VIDEO_BIT_RATE[action] / M_IN_K \
+#                      - REBUF_PENALTY * rebuf \
+#                      - SMOOTH_PENALTY * np.abs(VIDEO_BIT_RATE[action] -
+#                                                VIDEO_BIT_RATE[last_action]) / M_IN_K
+
+            # 7. HD reward, weighted by chunk length
+            reward = HD_REWARD[bit_rate] * chunk_length \
                      - REBUF_PENALTY * rebuf \
-                     - SMOOTH_PENALTY * np.abs(VIDEO_BIT_RATE[action] -
-                                               VIDEO_BIT_RATE[last_action]) / M_IN_K
+                     - SMOOTH_PENALTY * max(HD_REWARD[last_action] - HD_REWARD[action], 0)
 
             last_bit_rate = bit_rate
             last_action = action
@@ -133,7 +150,7 @@ def main():
             state = np.roll(state, -1, axis=1)
 
             # this should be S_INFO number of terms
-            state[0, -1] = VIDEO_BIT_RATE[action] / float(np.max(VIDEO_BIT_RATE))  # last quality
+            state[0, -1] = VIDEO_BIT_RATE[action] / float(np.max(VIDEO_BIT_RATE)) * 10  # last quality
             state[1, -1] = buffer_size / BUFFER_NORM_FACTOR
             state[2, -1] = float(video_chunk_size) / float(delay) / M_IN_K  # kilo byte / ms
             state[3, -1] = float(delay) / M_IN_K
@@ -153,7 +170,8 @@ def main():
             assert len(action_prob[0]) == np.sum(mask)
 
             action_cumsum = np.cumsum(action_prob)
-            bit_rate = (action_cumsum > np.random.randint(1, RAND_RANGE) / float(RAND_RANGE)).argmax()
+#             bit_rate = (action_cumsum > np.random.randint(1, RAND_RANGE) / float(RAND_RANGE)).argmax()
+            bit_rate = action_prob.argmax()
             # Note: we need to discretize the probability into 1/RAND_RANGE steps,
             # because there is an intrinsic discrepancy in passing single state and batch states
             action = bitrate_to_action(bit_rate, mask)

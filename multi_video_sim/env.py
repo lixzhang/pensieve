@@ -1,13 +1,13 @@
 import os
 import numpy as np
-
+import random
 
 RANDOM_SEED = 42
 MAX_NUM_BITRATES = 10
 VIDEO_CHUNCK_LEN = 4000.0  # millisec
 DRAIN_BUFFER_SLEEP_TIME = 500.0  # millisec
 MILLISECONDS_IN_SECOND = 1000.0
-BUFFER_THRESH = 60.0 * MILLISECONDS_IN_SECOND
+BUFFER_THRESH = 100.0 * MILLISECONDS_IN_SECOND
 B_IN_MB = 1000000.0
 BITS_IN_BYTE = 8.0
 PACKET_PAYLOAD_PORTION = 0.95
@@ -30,6 +30,10 @@ class Environment:
 		self.fixed_env = fixed_env
 		self.trace_folder = trace_folder
 		self.video_folder = video_folder
+
+		self.buffer_limit = BUFFER_THRESH
+		if not self.fixed_env:        
+			self.buffer_limit = random.randint(50, 300) * MILLISECONDS_IN_SECOND
 
 		# -- network traces --
 		cooked_files = os.listdir(self.trace_folder)
@@ -70,6 +74,7 @@ class Environment:
 		# -- video configurations --
 		self.video_num_bitrates = {}
 		self.video_num_chunks = {}
+		self.video_chunk_length = {}   
 		self.video_masks = {}
 		self.video_sizes = {}
 
@@ -78,6 +83,7 @@ class Environment:
 
 		for video_file in video_files:
 			video_sizes = []
+			video_chunk_length = []
 			with open(self.video_folder + video_file, 'rb') as f:
 				line_counter = 0
 				for line in f:
@@ -93,15 +99,18 @@ class Environment:
 						assert np.sum(video_mask) == video_num_bitrates
 
 					else:
-						video_size = [float(i) for i in parse]
+						video_size = [float(i)*B_IN_MB for i in parse[:-1]]
 						assert len(video_size) == video_num_bitrates
 						video_sizes.append(video_size)
+						video_chunk_length.append(float(parse[-1])*1000)
 				assert len(video_sizes) == video_num_chunks
 			
 			assert int(video_file) not in self.video_num_bitrates
 			self.video_num_bitrates[int(video_file)] = video_num_bitrates
 			assert int(video_file) not in self.video_num_chunks
 			self.video_num_chunks[int(video_file)] = video_num_chunks
+			assert int(video_file) not in self.video_chunk_length
+			self.video_chunk_length[int(video_file)] = video_chunk_length    
 			assert int(video_file) not in self.video_masks
 			self.video_masks[int(video_file)] = video_mask
 			assert int(video_file) not in self.video_sizes
@@ -109,6 +118,7 @@ class Environment:
 
 		assert(len(self.video_num_bitrates) == self.num_videos)
 		assert(len(self.video_num_chunks) == self.num_videos)
+		assert(len(self.video_chunk_length) == self.num_videos)  
 		assert(len(self.video_masks) == self.num_videos)
 		assert(len(self.video_sizes) == self.num_videos)
 
@@ -125,7 +135,7 @@ class Environment:
 		assert quality >= 0
 		assert quality < self.video_num_bitrates[self.video_idx]
 
-		video_chunk_size = self.video_sizes[self.video_idx][self.chunk_idx][quality] * B_IN_MB  # in bytes
+		video_chunk_size = self.video_sizes[self.video_idx][self.chunk_idx][quality] # * B_IN_MB  # in bytes
 		
 		# use the delivery opportunity in mahimahi
 		delay = 0.0  # in ms
@@ -173,11 +183,12 @@ class Environment:
 		self.buffer_size = np.maximum(self.buffer_size - delay, 0.0)
 
 		# add in the new chunk
-		self.buffer_size += VIDEO_CHUNCK_LEN
+		self.buffer_size += self.video_chunk_length[self.video_idx][self.chunk_idx]
+		chunk_length = self.video_chunk_length[self.video_idx][self.chunk_idx]
 
 		# sleep if buffer gets too large
 		sleep_time = 0
-		if self.buffer_size > BUFFER_THRESH:
+		if self.buffer_size > self.buffer_limit: # BUFFER_THRESH:
 			# exceed the buffer limit
 			# we need to skip some network bandwidth here
 			# but do not add up the delay
@@ -207,7 +218,8 @@ class Environment:
 		# In the new version the buffer always have at least
 		# one chunk of video
 		return_buffer_size = self.buffer_size
-
+		return_buffer_limit = self.buffer_limit
+        
 		self.chunk_idx += 1
 
 		end_of_video = False
@@ -234,14 +246,18 @@ class Environment:
 				# randomize the start point of the trace
 				# note: trace file starts with time 0
 				self.mahimahi_ptr = np.random.randint(1, len(self.cooked_bw))
-
+                
+				self.buffer_limit = random.randint(50, 300) * MILLISECONDS_IN_SECOND
+                
 			self.last_mahimahi_time = self.cooked_time[self.mahimahi_ptr - 1]
 
 		video_num_chunks = self.video_num_chunks[self.video_idx]
 		video_chunk_remain = self.video_num_chunks[self.video_idx] - self.chunk_idx
 		next_video_chunk_sizes = self.video_sizes[self.video_idx][self.chunk_idx]
 		bitrate_mask = self.video_masks[self.video_idx]
-
+		next_video_chunk_duration = self.video_chunk_length[self.video_idx][self.chunk_idx]
+		next_bw = self.cooked_bw[self.mahimahi_ptr]
+        
 		return delay, \
 			sleep_time, \
 			return_buffer_size / MILLISECONDS_IN_SECOND, \
@@ -251,7 +267,10 @@ class Environment:
 			video_chunk_remain, \
 			video_num_chunks, \
 			next_video_chunk_sizes, \
-			bitrate_mask
+			bitrate_mask, chunk_length / MILLISECONDS_IN_SECOND, \
+			return_buffer_limit / MILLISECONDS_IN_SECOND, \
+			next_video_chunk_duration / MILLISECONDS_IN_SECOND, \
+			next_bw / BITS_IN_BYTE
 
 
 def main():
